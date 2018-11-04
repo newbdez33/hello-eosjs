@@ -14,5 +14,103 @@
 </head>
 <body>
 	<h1>eosjs demo</h1>
+	<button onclick="toggleScatter()" id="scatter_button">ATTACH IDENTITY</button>
+	<button onclick="contract()">CONTRACT</button>
+	<button onclick="transfer()">TRANSFER</button>
 </body>
+<!-- JS -->
+<script>
+
+	const network = {
+			blockchain:'eos',
+			host:'kylin-testnet.jeda.one',
+			port:8888,
+			protocol:'http',
+			chainId:'5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191'
+	};
+
+	loadAccount();
+	
+
+	function loadAccount() {
+		ScatterJS.plugins( new ScatterEOS() );
+		ScatterJS.scatter.connect('demo-app').then(connected => {
+			if ( !connected ) {
+				// User does not have Scatter installed/unlocked.
+				console.log("not connect");
+			}
+			if(ScatterJS.scatter.identity != null) {
+				console.log(ScatterJS.scatter.identity);
+				document.getElementById("scatter_button").innerText = "REMOVE IDENTITY";
+			}
+
+			//TODO
+			//const scatter = ScatterJS.scatter;
+			//window.ScatterJS = null;
+
+		});
+	}
+
+	function toggleScatter() {
+		
+		if(ScatterJS.scatter.identity != null) {
+			ScatterJS.scatter.forgetIdentity();
+			console.log("logout");
+			document.getElementById("scatter_button").innerText = "ATTACHE IDENTITY";
+			return;
+		}
+
+		const requiredFields = { accounts:[network] };
+		ScatterJS.scatter.getIdentity( requiredFields ).then(identity => {
+			document.getElementById("scatter_button").innerText = "REMOVE IDENTITY";
+		}).catch(error => {
+			console.error(error);
+		});
+		
+	}
+
+	function contract() {
+		if ( ScatterJS.scatter.identity == null ) {
+			alert("Attach Identity first");
+			return;
+		}
+
+		const eos = ScatterJS.scatter.eos( network, Eos, {expireInSeconds:60} );
+		const account = ScatterJS.scatter.identity.accounts.find(x => x.blockchain === 'eos');
+		var options = {
+			authorization: account.name + '@' + account.authority,
+			broadcast: true,
+			sign: true
+		}
+
+		eos.contract('hashhubdemo1').then( contract => {
+			contract.hi("hashhubdemo1", options).then( res => {
+				console.log("success");
+			}).catch( err => {
+				console.log(err);
+			});
+		});
+
+	}
+
+	function transfer() {
+
+		if ( ScatterJS.scatter.identity == null ) {
+			alert("Attach Identity first");
+			return;
+		}
+
+		const eos = ScatterJS.scatter.eos( network, Eos, {expireInSeconds:60} );
+		const account = ScatterJS.scatter.identity.accounts.find(x => x.blockchain === 'eos');
+		var options = {
+			authorization: account.name + '@' + account.authority,
+			broadcast: true,
+			sign: true
+		}
+		eos.transfer(account.name, 'hashhubdemo2', '1.0000 EOS', 'test', options).then( ret => {
+			console.log("success");
+		});
+
+	}
+</script>
 </html>
