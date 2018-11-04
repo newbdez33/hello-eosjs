@@ -1,0 +1,3 @@
+# hello-eosjs
+
+`npm install`
